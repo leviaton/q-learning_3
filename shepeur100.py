@@ -141,7 +141,7 @@ class AgentAI(object):
         self.iterr = iterr
         self.epsilon = 0
         self.gamma = 0.8
-        self.memory_reward = deque(maxlen=Max_Memory)
+        
         self.memory = deque(maxlen=Max_Memory)
         self.mid_memory = deque(maxlen=Mid_memory)
         self.model = DQN((number_of_fishs*6)+6)
@@ -271,10 +271,7 @@ class AgentAI(object):
         self.mid_memory.append(
             (local_ts, action, xreward, xrecord, new_local_ts))
 
-    def reward_remember(self, local_ts, action, xreward, xrecord, new_local_ts):
-        self.memory_reward.append(
-            (local_ts, action, xreward, xrecord, new_local_ts))
-
+   
     def train_long_memory(self):
 
         if len(self.memory) > Batch_Size:
@@ -288,10 +285,10 @@ class AgentAI(object):
 
     def train_long_memory_2(self):
 
-        if len(self.memory_reward) > Long_Batch_Size:
-            mini_sample = random.sample(self.memory_reward, Long_Batch_Size)
+        if len(self.memory) > Long_Batch_Size:
+            mini_sample = random.sample(self.memory, Long_Batch_Size)
         else:
-            mini_sample = self.memory_reward
+            mini_sample = self.memory
         local_tss, actions, rewards, records, new_local_tss = zip(*mini_sample)
 
         self.trainer.train_step(
@@ -552,7 +549,7 @@ def game(locale_numbre_of_episode, iterration):
                 game_complited += 1
                 
             reward1 = torch.tensor(
-                [round((reward), 6)], dtype=torch.float64, device=device)
+                [round((reward), 6)], dtype=torch.float32, device=device)
 
             new_state = collect_data(fishs, fish, clos_to_fiches, clos_to_box)
 
@@ -588,8 +585,7 @@ def game(locale_numbre_of_episode, iterration):
                           new_state1)            # remember
             fish.mid_remember(old_state1, action_now1, delta_reward.to(device), game_done1,
                               new_state1)
-            fish.reward_remember(old_state1, action_now1, reward1.to(device), game_done1,
-                                 new_state1)
+            
             ##################################################################################################
 
             if iterr % 30 == 0 and (delta_reward == 0):
@@ -691,7 +687,7 @@ def game(locale_numbre_of_episode, iterration):
         fish.train_long_memory_2()
         if reward > record and (not line1.intersects(line_wall)):
             record = reward
-            
+            print(record)
             fish.record = record
             record1 = torch.tensor(
                 [record], dtype=torch.float32, device=device)
